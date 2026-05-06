@@ -28,19 +28,19 @@
 body {
 background: var(–bg);
 color: var(–text);
-font-family: ‘Noto Sans JP’, sans-serif;
+font-family: ‘Noto Sans JP’, ‘Hiragino Sans’, ‘Hiragino Kaku Gothic ProN’, sans-serif;
 font-size: 14px;
 min-height: 100vh;
+padding-top: env(safe-area-inset-top);
 }
 
 /* ── Header ── */
 .header {
-padding: 24px 20px 16px;
+padding: 16px 20px 16px;
 border-bottom: 1px solid var(–border);
 position: sticky;
 top: 0;
-background: rgba(15,15,19,0.95);
-backdrop-filter: blur(8px);
+background: #0f0f13;
 z-index: 100;
 }
 .header-top {
