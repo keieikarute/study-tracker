@@ -7,18 +7,19 @@
 <title>講義マスター進捗管理</title>
 <style>
   :root {
-    --bg: #0f0f13;
-    --surface: #17171e;
-    --surface2: #1e1e28;
-    --border: #2a2a38;
-    --corp-accent: #4f8fff;
-    --corp-dim: #1a2a4a;
-    --inh-accent: #b06aff;
-    --inh-dim: #2a1a4a;
-    --done-green: #3ecf8e;
-    --text: #e8e8f0;
-    --text-sub: #888899;
-    --text-dim: #444455;
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --border: #e0e4ea;
+    --corp-accent: #2563eb;
+    --corp-dim: #eff6ff;
+    --inh-accent: #7c3aed;
+    --inh-dim: #f5f3ff;
+    --done-green: #16a34a;
+    --done-dim: #f0fdf4;
+    --text: #1a1a2e;
+    --text-sub: #64748b;
+    --text-dim: #94a3b8;
   }
 
 - { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,8 +39,9 @@ padding: 16px 20px 16px;
 border-bottom: 1px solid var(–border);
 position: sticky;
 top: 0;
-background: #0f0f13;
+background: #ffffff;
 z-index: 100;
+box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .header-top {
 display: flex;
@@ -106,7 +108,7 @@ display: flex;
 gap: 4px;
 padding: 12px 20px 0;
 border-bottom: 1px solid var(–border);
-background: var(–bg);
+background: #ffffff;
 position: sticky;
 top: 87px;
 z-index: 99;
@@ -170,8 +172,8 @@ margin-bottom: 8px;
 overflow: hidden;
 transition: border-color 0.2s;
 }
-.lecture-card.done { border-color: var(–done-green); opacity: 0.75; }
-.lecture-card.done .card-header { background: rgba(62,207,142,0.05); }
+.lecture-card.done { border-color: var(–done-green); background: #f0fdf4; }
+.lecture-card.done .card-header { background: #f0fdf4; }
 
 .card-header {
 display: flex;
@@ -246,7 +248,7 @@ appearance: none;
 width: 36px;
 height: 20px;
 border-radius: 99px;
-background: var(–border);
+background: #cbd5e1;
 cursor: pointer;
 position: relative;
 transition: background 0.2s;
@@ -258,7 +260,7 @@ position: absolute;
 top: 3px; left: 3px;
 width: 14px; height: 14px;
 border-radius: 50%;
-background: var(–text-sub);
+background: #ffffff;
 transition: all 0.2s;
 }
 .check-toggle:checked { background: var(–done-green); }
