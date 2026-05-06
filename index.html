@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>講義マスター進捗管理</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+–bg: #0f0f13;
+–surface: #17171e;
+–surface2: #1e1e28;
+–border: #2a2a38;
+–corp-accent: #4f8fff;
+–corp-dim: #1a2a4a;
+–inh-accent: #b06aff;
+–inh-dim: #2a1a4a;
+–done-green: #3ecf8e;
+–text: #e8e8f0;
+–text-sub: #888899;
+–text-dim: #444455;
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘Noto Sans JP’, sans-serif;
+font-size: 14px;
+min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+padding: 24px 20px 16px;
+border-bottom: 1px solid var(–border);
+position: sticky;
+top: 0;
+background: rgba(15,15,19,0.95);
+backdrop-filter: blur(8px);
+z-index: 100;
+}
+.header-top {
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+gap: 12px;
+flex-wrap: wrap;
+}
+.title-block h1 {
+font-size: 18px;
+font-weight: 700;
+letter-spacing: 0.05em;
+}
+.title-block p {
+font-size: 11px;
+color: var(–text-sub);
+margin-top: 2px;
+font-family: ‘DM Mono’, monospace;
+}
+
+.deadline-badge {
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 6px;
+padding: 6px 12px;
+color: var(–text-sub);
+white-space: nowrap;
+}
+.deadline-badge span { color: #ff9f4a; font-weight: 500; }
+
+/* ── Overall progress ── */
+.progress-bar-wrap {
+margin-top: 14px;
+display: flex;
+gap: 12px;
+align-items: center;
+}
+.progress-bar {
+flex: 1;
+height: 6px;
+background: var(–border);
+border-radius: 99px;
+overflow: hidden;
+}
+.progress-bar-fill {
+height: 100%;
+border-radius: 99px;
+background: linear-gradient(90deg, var(–corp-accent), var(–inh-accent));
+transition: width 0.4s ease;
+}
+.progress-label {
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+color: var(–text-sub);
+white-space: nowrap;
+}
+.progress-label strong { color: var(–done-green); }
+
+/* ── Tab bar ── */
+.tabs {
+display: flex;
+gap: 4px;
+padding: 12px 20px 0;
+border-bottom: 1px solid var(–border);
+background: var(–bg);
+position: sticky;
+top: 87px;
+z-index: 99;
+}
+.tab {
+padding: 8px 18px;
+border-radius: 8px 8px 0 0;
+border: 1px solid transparent;
+border-bottom: none;
+cursor: pointer;
+font-size: 13px;
+font-weight: 500;
+color: var(–text-sub);
+background: none;
+transition: all 0.2s;
+font-family: ‘Noto Sans JP’, sans-serif;
+}
+.tab.active-corp {
+background: var(–corp-dim);
+border-color: var(–corp-accent);
+color: var(–corp-accent);
+}
+.tab.active-inh {
+background: var(–inh-dim);
+border-color: var(–inh-accent);
+color: var(–inh-accent);
+}
+.tab:hover:not(.active-corp):not(.active-inh) { color: var(–text); }
+
+/* ── Content ── */
+.content { padding: 16px 20px 60px; }
+.section-header {
+display: flex;
+align-items: center;
+gap: 10px;
+margin: 20px 0 10px;
+}
+.section-header h2 {
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: var(–text-sub);
+}
+.section-pill {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+padding: 2px 8px;
+border-radius: 99px;
+border: 1px solid;
+}
+.pill-corp { border-color: var(–corp-accent); color: var(–corp-accent); background: var(–corp-dim); }
+.pill-inh  { border-color: var(–inh-accent);  color: var(–inh-accent);  background: var(–inh-dim); }
+
+/* ── Lecture card ── */
+.lecture-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+margin-bottom: 8px;
+overflow: hidden;
+transition: border-color 0.2s;
+}
+.lecture-card.done { border-color: var(–done-green); opacity: 0.75; }
+.lecture-card.done .card-header { background: rgba(62,207,142,0.05); }
+
+.card-header {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 10px 14px;
+cursor: pointer;
+user-select: none;
+}
+.card-num {
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+font-weight: 500;
+color: var(–text-dim);
+min-width: 32px;
+}
+.card-title {
+flex: 1;
+font-size: 13px;
+line-height: 1.5;
+}
+.card-badges {
+display: flex;
+gap: 6px;
+align-items: center;
+flex-shrink: 0;
+flex-wrap: wrap;
+justify-content: flex-end;
+}
+.badge {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+padding: 2px 7px;
+border-radius: 4px;
+border: 1px solid var(–border);
+color: var(–text-sub);
+white-space: nowrap;
+}
+.badge.done-badge { border-color: var(–done-green); color: var(–done-green); background: rgba(62,207,142,0.08); }
+.badge.partial-badge { border-color: #ffd166; color: #ffd166; background: rgba(255,209,102,0.08); }
+
+.expand-icon {
+color: var(–text-dim);
+font-size: 12px;
+transition: transform 0.2s;
+margin-left: 4px;
+}
+.card-header.open .expand-icon { transform: rotate(180deg); }
+
+/* ── Expand panel ── */
+.card-body {
+display: none;
+padding: 0 14px 14px;
+border-top: 1px solid var(–border);
+}
+.card-body.open { display: block; }
+
+.check-row {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-top: 10px;
+flex-wrap: wrap;
+}
+.check-label {
+font-size: 12px;
+color: var(–text-sub);
+min-width: 90px;
+}
+.check-toggle {
+appearance: none;
+width: 36px;
+height: 20px;
+border-radius: 99px;
+background: var(–border);
+cursor: pointer;
+position: relative;
+transition: background 0.2s;
+flex-shrink: 0;
+}
+.check-toggle::after {
+content: ‘’;
+position: absolute;
+top: 3px; left: 3px;
+width: 14px; height: 14px;
+border-radius: 50%;
+background: var(–text-sub);
+transition: all 0.2s;
+}
+.check-toggle:checked { background: var(–done-green); }
+.check-toggle:checked::after { left: 19px; background: #fff; }
+
+.date-input {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 6px;
+color: var(–text);
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+padding: 4px 8px;
+width: 130px;
+transition: border-color 0.2s;
+}
+.date-input:focus { outline: none; border-color: var(–done-green); }
+
+.training-input {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 6px;
+color: var(–text);
+font-size: 12px;
+padding: 4px 8px;
+width: 170px;
+font-family: ‘Noto Sans JP’, sans-serif;
+transition: border-color 0.2s;
+}
+.training-input:focus { outline: none; border-color: var(–inh-accent); }
+.training-input::placeholder { color: var(–text-dim); }
+
+/* ── Mini progress per section ── */
+.mini-progress {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-left: auto;
+}
+.mini-bar {
+width: 60px;
+height: 4px;
+background: var(–border);
+border-radius: 99px;
+overflow: hidden;
+}
+.mini-bar-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+.mini-bar-fill.corp { background: var(–corp-accent); }
+.mini-bar-fill.inh  { background: var(–inh-accent); }
+.mini-pct {
+font-family: ‘DM Mono’, monospace;
+font-size: 10px;
+color: var(–text-sub);
+min-width: 28px;
+text-align: right;
+}
+
+/* hidden tab */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Save notice */
+.save-notice {
+position: fixed;
+bottom: 16px;
+right: 16px;
+background: var(–surface2);
+border: 1px solid var(–done-green);
+color: var(–done-green);
+font-size: 11px;
+padding: 6px 14px;
+border-radius: 6px;
+opacity: 0;
+transition: opacity 0.3s;
+font-family: ‘DM Mono’, monospace;
+z-index: 200;
+}
+.save-notice.show { opacity: 1; }
+</style>
+
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="title-block">
+      <h1>📚 講義マスター進捗管理</h1>
+      <p>TAC 法人税法 + 相続税法 / 2026</p>
+    </div>
+    <div class="deadline-badge">
+      目標締切 <span>2026年11月末</span><br>
+      残り <span id="days-left">—</span> 日
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar"><div class="progress-bar-fill" id="total-fill" style="width:0%"></div></div>
+    <div class="progress-label"><strong id="total-done">0</strong> / <span id="total-all">0</span> 講義完了</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active-corp" onclick="switchTab('corp')">法人税法（43講）</button>
+  <button class="tab" onclick="switchTab('inh')">相続税法（32講）</button>
+</div>
+
+<div class="content">
+  <div id="panel-corp" class="tab-panel active"></div>
+  <div id="panel-inh"  class="tab-panel"></div>
+</div>
+
+<div class="save-notice" id="save-notice">保存しました ✓</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+const CORP = [
+  // テキスト1
+  { id:'c1-1',  book:'テキスト1', num:'第1回',  title:'納税義務者と課税所得等の範囲 / 各事業年度の所得の金額の計算の通則 / 企業利益と課税所得（別表4）' },
+  { id:'c1-2',  book:'テキスト1', num:'第2回',  title:'税額計算の仕組み（別表1）/ 減価償却（損金算入・償却限度額）' },
+  { id:'c1-3',  book:'テキスト1', num:'第3回',  title:'減価償却（償却限度額・グルーピング・損金算入）' },
+  { id:'c1-4',  book:'テキスト1', num:'第4回',  title:'減価償却（少額等、償却可能限度額）' },
+  { id:'c1-5',  book:'テキスト1', num:'第5回',  title:'租税公課等' },
+  { id:'c1-6',  book:'テキスト1', num:'第6回',  title:'受取配当等の益金不算入' },
+  { id:'c1-7',  book:'テキスト1', num:'第7回',  title:'所得税額控除' },
+  { id:'c1-8',  book:'テキスト1', num:'第8回',  title:'外国税額控除 / 外国子会社から受ける配当等' },
+  { id:'c1-9',  book:'テキスト1', num:'第9回',  title:'実力テスト（通信添削問題）/ 棚卸資産 / 特別控除' },
+  // テキスト2
+  { id:'c2-1',  book:'テキスト2', num:'第1回',  title:'特別償却 / 特別償却準備金' },
+  { id:'c2-2',  book:'テキスト2', num:'第2回',  title:'繰延資産・金銭債務の償還差損益 / 有価証券 / 短期売買商品等' },
+  { id:'c2-3',  book:'テキスト2', num:'第3回',  title:'評価損益 / 交際費等' },
+  { id:'c2-4',  book:'テキスト2', num:'第4回',  title:'給与等' },
+  { id:'c2-5',  book:'テキスト2', num:'第5回',  title:'寄附金 / 圧縮記帳制度の概要 / 国庫補助金等の圧縮記帳' },
+  { id:'c2-6',  book:'テキスト2', num:'第6回',  title:'保険差益の圧縮記帳 / 交換の圧縮記帳' },
+  { id:'c2-7',  book:'テキスト2', num:'第7回',  title:'特定資産の買換えの圧縮記帳 / 収用等の圧縮記帳 / 収用等の所得の特別控除' },
+  { id:'c2-8',  book:'テキスト2', num:'第8回',  title:'平成21年及び22年に土地等を取得した場合の特例 / 貸倒引当金（一括貸倒引当金）' },
+  { id:'c2-9',  book:'テキスト2', num:'第9回',  title:'海外投資等損失準備金 / 実力テスト（通信添削問題）' },
+  // テキスト3
+  { id:'c3-1',  book:'テキスト3', num:'第1回',  title:'外貨建取引等 / 同族会社（同族会社の意義）' },
+  { id:'c3-2',  book:'テキスト3', num:'第2回',  title:'給与等（役員の範囲・役員給与）/ 企業利益と課税所得（別表4の構造）' },
+  { id:'c3-3',  book:'テキスト3', num:'第3回',  title:'同族会社（留保金課税）' },
+  { id:'c3-4',  book:'テキスト3', num:'第4回',  title:'同族会社（留保金課税の応用）/ 企業利益と課税所得（別表5（一）のⅠ、別表5（一）のⅡ）' },
+  { id:'c3-5',  book:'テキスト3', num:'第5回',  title:'租税公課等（別表5（二）、仮払）/ 欠損金' },
+  { id:'c3-6',  book:'テキスト3', num:'第6回',  title:'損益の帰属時期 / 企業利益と課税所得（決算修正型）' },
+  { id:'c3-7',  book:'テキスト3', num:'第7回',  title:'使途秘匿金の特別税額 / 特別控除（応用）/ 給与等の引上げ及び設備投資等の特別控除' },
+  { id:'c3-8',  book:'テキスト3', num:'第8回',  title:'試験研究費の特別控除 / 受取配当等の益金不算入（応用）' },
+  { id:'c3-9',  book:'テキスト3', num:'第9回',  title:'みなし配当（概要）/ 実力テスト（通信添削問題）' },
+  // テキスト4
+  { id:'c4-1',  book:'テキスト4', num:'第1回',  title:'みなし配当' },
+  { id:'c4-2',  book:'テキスト4', num:'第2回',  title:'貸倒損失 / 貸倒引当金（個別）/ 貸倒引当金（一括）' },
+  { id:'c4-3',  book:'テキスト4', num:'第3回',  title:'リース取引 / 延払基準 / 企業組織再編税制（合併・分割型分割）' },
+  { id:'c4-4',  book:'テキスト4', num:'第4回',  title:'企業組織再編税制（分社型分割・現物出資・株式交換等・租税回避防止）/ グループ法人税制' },
+  { id:'c4-5',  book:'テキスト4', num:'第5回',  title:'実力テスト' },
+  { id:'c4-6',  book:'テキスト4', num:'第6回',  title:'グループ法人税制 / その他の損金（保険料・入会金等）' },
+  { id:'c4-7',  book:'テキスト4', num:'第7回',  title:'事業年度 / 企業利益と課税所得（解散）/ 減価償却（取得価額・増加償却・耐用年数）' },
+  // テキスト5
+  { id:'c5-1',  book:'テキスト5', num:'第1回',  title:'減価償却（普通償却・応用）/ 減価償却（特別償却・不足繰越）/ 特別償却準備金（不足繰越）' },
+  { id:'c5-2',  book:'テキスト5', num:'第2回',  title:'特別勘定 / 先行取得の圧縮記帳' },
+  { id:'c5-3',  book:'テキスト5', num:'第3回',  title:'交際費等（応用）/ 企業利益と課税所得（税効果会計）' },
+  { id:'c5-4',  book:'テキスト5', num:'第4回',  title:'国外関連者との取引に係る課税の特例 / 国外支配株主等に係る負債利子等の課税の特例 / 対象純支払利子等に係る課税の特例' },
+  { id:'c5-5',  book:'テキスト5', num:'第5回',  title:'企業組織再編税制（被合併法人等の取扱い）/（合併法人等の取扱い）' },
+  { id:'c5-6',  book:'テキスト5', num:'第6回',  title:'租税公課等（消費税）/ 借地権' },
+  { id:'c5-7',  book:'テキスト5', num:'第7回',  title:'納税義務者と課税所得等の範囲 / 実質課税の原則、納税地 / 申告、納付及び還付等' },
+  { id:'c5-8',  book:'テキスト5', num:'第8回',  title:'連結納税制度' },
+  { id:'c5-9',  book:'テキスト5', num:'第9回',  title:'実力テスト（通信添削問題）' },
+];
+
+const INH = [
+  // テキスト1
+  { id:'i1-1', book:'テキスト1', num:'第1回', title:'相続税法の概要 / 相続人 / 相続分' },
+  { id:'i1-2', book:'テキスト1', num:'第2回', title:'相続税法上の相続人 / 相続税の納税義務者と課税財産の範囲 / 相続税の課税価格' },
+  { id:'i1-3', book:'テキスト1', num:'第3回', title:'生命保険金等（みなし相続、遺贈）/ 退職手当金等（みなし相続、遺贈）/ 相続税の非課税財産 / 債務控除' },
+  { id:'i1-4', book:'テキスト1', num:'第4回', title:'算出相続税額の計算 / 配偶者に対する相続税額の軽減 / 未成年者控除 / 障害者控除' },
+  { id:'i1-5', book:'テキスト1', num:'第5回', title:'算出贈与税額の計算（暦年課税）/ 生前贈与加算 / 贈与税額控除（暦年課税）/ 相続時精算課税の選択 / 相続時精算課税適用財産 / 贈与税額控除（精算課税）/ 特定納税義務者' },
+  { id:'i1-6', book:'テキスト1', num:'第6回', title:'財産評価の総論 / 財産評価（預貯金・公社債・証券投資信託の受益証券・ゴルフ会員権）' },
+  { id:'i1-7', book:'テキスト1', num:'第7回', title:'財産評価（上場株式・株式に関する権利）' },
+  { id:'i1-8', book:'テキスト1', num:'第8回', title:'実力テスト（通信添削問題）/ 財産評価（一般動産・たな卸商品等）/ 財産評価の総論' },
+  // テキスト2
+  { id:'i2-1', book:'テキスト2', num:'第1回', title:'財産評価（家屋及び家屋の上に存する権利・構築物・宅地及び宅地の上に存する権利）' },
+  { id:'i2-2', book:'テキスト2', num:'第2回', title:'財産評価（宅地及び宅地の上に存する権利・使用貸借・相当の地代）' },
+  { id:'i2-3', book:'テキスト2', num:'第3回', title:'小規模宅地等の特例' },
+  { id:'i2-4', book:'テキスト2', num:'第4回', title:'小規模宅地等の特例 / 贈与税の納税義務者と課税財産の範囲 / 贈与税の課税価格 / 生命保険金等（みなし贈与）' },
+  { id:'i2-5', book:'テキスト2', num:'第5回', title:'信託（みなし贈与・遺贈）/ 贈与税の非課税財産' },
+  { id:'i2-6', book:'テキスト2', num:'第6回', title:'算出贈与税額の計算（暦年課税）/ 贈与税額控除（暦年課税）/ 相続時精算課税の選択 / 贈与税の配偶者控除 / 贈与税の外国税額控除 / 住宅取得等資金の特例' },
+  { id:'i2-7', book:'テキスト2', num:'第7回', title:'未成年者控除 / 障害者控除 / 相次相続控除 / 相続税の外国税額控除' },
+  { id:'i2-8', book:'テキスト2', num:'第8回', title:'実力テスト（通信添削問題）/ 債務控除' },
+  // テキスト3
+  { id:'i3-1', book:'テキスト3', num:'第1回', title:'財産評価（取引相場のない株式）' },
+  { id:'i3-2', book:'テキスト3', num:'第2回', title:'財産評価（取引相場のない株式・出資・貸付金債権等及び受取手形等）' },
+  { id:'i3-3', book:'テキスト3', num:'第3回', title:'財産評価（農地及び農地の上に存する権利・山林及び山林の上に存する権利・立竹木）/ 立木の評価 / 特定計画山林の特例 / 個人とみなされる納税義務者' },
+  { id:'i3-4', book:'テキスト3', num:'第4回', title:'相続人 / 相続分 / 相続税法上の相続人 / 算出相続税額の計算' },
+  { id:'i3-5', book:'テキスト3', num:'第5回', title:'生命保険金等（みなし相続、遺贈）/ 退職手当金等（みなし相続、遺贈）/ 年金により支払を受ける場合' },
+  { id:'i3-6', book:'テキスト3', num:'第6回', title:'生命保険契約に関する権利（みなし相続、遺贈）/ 定期金（給付契約）に関する権利（みなし相続、遺贈）/ 定期金（の受給）に関する権利（みなし贈与）' },
+  { id:'i3-7', book:'テキスト3', num:'第7回', title:'保証期間付定期金に関する権利（みなし相続、遺贈、贈与）/ 契約に基づかない生存に関する権利（みなし相続、遺贈）/ 低額譲受益（みなし贈与、遺贈）/ 債務免除等による利益（みなし贈与、遺贈）/ その他の利益の享受（みなし贈与、遺贈）' },
+  { id:'i3-8', book:'テキスト3', num:'第8回', title:'実力テスト（通信添削問題）/ 相続分' },
+  // テキスト4
+  { id:'i4-1', book:'テキスト4', num:'第1回', title:'相続税の課税価格 / 配偶者に対する相続税額の軽減 / 債務控除 / 相続税法の相続税の期限内申告' },
+  { id:'i4-2', book:'テキスト4', num:'第2回', title:'相続税法の相続税の期限内申告 / 還付を受けるための相続税の申告 / 相続税法の贈与税の期限内申告 / 相続時精算課税の選択 / 贈与税の申告内容の開示等' },
+  { id:'i4-3', book:'テキスト4', num:'第3回', title:'相続税法の期限後申告、修正申告及び更正の請求の特則 / 相続税法の更正又は決定' },
+  { id:'i4-4', book:'テキスト4', num:'第4回', title:'租税特別措置法の特則 / 延納' },
+  { id:'i4-5', book:'テキスト4', num:'第5回', title:'延納 / 物納 / 連帯納付の義務等' },
+  { id:'i4-6', book:'テキスト4', num:'第6回', title:'農地等の納税猶予' },
+  { id:'i4-7', book:'テキスト4', num:'第7回', title:'非上場株式等の納税猶予の特例 / 個人の事業用資産の納税猶予 / 山林の納税猶予 / 美術品の納税猶予' },
+  { id:'i4-8', book:'テキスト4', num:'第8回', title:'実力テスト（通信添削問題）/ 医療法人の持分の納税猶予' },
+];
+
+// ─────────────────────────────────────────────
+//  STATE  (localStorage)
+// ─────────────────────────────────────────────
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('study_tracker_v2') || '{}'); } catch { return {}; }
+}
+function saveState(s) {
+  localStorage.setItem('study_tracker_v2', JSON.stringify(s));
+  const el = document.getElementById('save-notice');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+let state = loadState();
+
+function getLS(id) {
+  return state[id] || { textDone: false, textDate: '', trainDone: false, trainDate: '', trainNums: '' };
+}
+function setLS(id, key, val) {
+  if (!state[id]) state[id] = getLS(id);
+  state[id][key] = val;
+  saveState(state);
+  updateAll();
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+function groupBy(arr, key) {
+  const map = {};
+  arr.forEach(x => { (map[x[key]] = map[x[key]] || []).push(x); });
+  return map;
+}
+
+function cardDone(id) {
+  const s = getLS(id);
+  return s.textDone && s.trainDone;
+}
+function cardPartial(id) {
+  const s = getLS(id);
+  return s.textDone || s.trainDone;
+}
+
+function renderPanel(data, panelId, accent) {
+  const panel = document.getElementById(panelId);
+  const books = groupBy(data, 'book');
+  let html = '';
+  Object.entries(books).forEach(([book, lectures]) => {
+    const total = lectures.length;
+    const done  = lectures.filter(l => cardDone(l.id)).length;
+    html += `
+      <div class="section-header">
+        <h2>${book}</h2>
+        <div class="mini-progress">
+          <div class="mini-bar"><div class="mini-bar-fill ${accent}" id="mini-${panelId}-${book.replace(/\s/g,'')}" style="width:${(done/total*100).toFixed(0)}%"></div></div>
+          <span class="mini-pct" id="mpct-${panelId}-${book.replace(/\s/g,'')}">${done}/${total}</span>
+        </div>
+      </div>`;
+    lectures.forEach(lec => {
+      const s   = getLS(lec.id);
+      const done = cardDone(lec.id);
+      const part = cardPartial(lec.id);
+      const textB = s.textDone  ? `<span class="badge done-badge">テキスト✓</span>` : (s.trainDone ? `<span class="badge partial-badge">一部完了</span>` : '');
+      const trainB = s.trainDone ? `<span class="badge done-badge">トレーニング✓</span>` : '';
+      html += `
+        <div class="lecture-card ${done ? 'done' : ''}" id="card-${lec.id}">
+          <div class="card-header" onclick="toggleCard('${lec.id}')">
+            <span class="card-num">${lec.num}</span>
+            <span class="card-title">${lec.title}</span>
+            <div class="card-badges" id="badges-${lec.id}">${textB}${trainB}</div>
+            <span class="expand-icon" id="exp-${lec.id}">▼</span>
+          </div>
+          <div class="card-body" id="body-${lec.id}">
+            <div class="check-row">
+              <span class="check-label">📖 テキスト</span>
+              <input type="checkbox" class="check-toggle" ${s.textDone ? 'checked' : ''} onchange="setLS('${lec.id}','textDone',this.checked)">
+              <input type="date" class="date-input" value="${s.textDate}" onchange="setLS('${lec.id}','textDate',this.value)" placeholder="完了日">
+            </div>
+            <div class="check-row">
+              <span class="check-label">✏️ トレーニング</span>
+              <input type="checkbox" class="check-toggle" ${s.trainDone ? 'checked' : ''} onchange="setLS('${lec.id}','trainDone',this.checked)">
+              <input type="date" class="date-input" value="${s.trainDate}" onchange="setLS('${lec.id}','trainDate',this.value)" placeholder="完了日">
+            </div>
+            <div class="check-row">
+              <span class="check-label">問題番号メモ</span>
+              <input type="text" class="training-input" value="${s.trainNums}" onchange="setLS('${lec.id}','trainNums',this.value)" placeholder="例: 問題1〜12">
+            </div>
+          </div>
+        </div>`;
+    });
+  });
+  panel.innerHTML = html;
+}
+
+function toggleCard(id) {
+  const body = document.getElementById('body-' + id);
+  const hdr  = body.previousElementSibling;
+  const exp  = document.getElementById('exp-' + id);
+  const open = body.classList.toggle('open');
+  hdr.classList.toggle('open', open);
+}
+
+function updateAll() {
+  const all = [...CORP, ...INH];
+  const totalDone = all.filter(l => cardDone(l.id)).length;
+  document.getElementById('total-done').textContent = totalDone;
+  document.getElementById('total-all').textContent  = all.length;
+  document.getElementById('total-fill').style.width = (totalDone / all.length * 100).toFixed(1) + '%';
+
+  // Re-render cards (badges + done class)
+  [...CORP, ...INH].forEach(lec => {
+    const card = document.getElementById('card-' + lec.id);
+    if (!card) return;
+    const done = cardDone(lec.id);
+    card.classList.toggle('done', done);
+    const s = getLS(lec.id);
+    const textB  = s.textDone  ? `<span class="badge done-badge">テキスト✓</span>` : (s.trainDone ? `<span class="badge partial-badge">一部完了</span>` : '');
+    const trainB = s.trainDone ? `<span class="badge done-badge">トレーニング✓</span>` : '';
+    document.getElementById('badges-' + lec.id).innerHTML = textB + trainB;
+  });
+
+  // Mini progress
+  const corpBooks = groupBy(CORP, 'book');
+  Object.entries(corpBooks).forEach(([book, lectures]) => {
+    const done = lectures.filter(l => cardDone(l.id)).length;
+    const key = book.replace(/\s/g,'');
+    const fill = document.getElementById('mini-panel-corp-' + key);
+    const pct  = document.getElementById('mpct-panel-corp-' + key);
+    if (fill) fill.style.width = (done/lectures.length*100).toFixed(0) + '%';
+    if (pct)  pct.textContent  = `${done}/${lectures.length}`;
+  });
+  const inhBooks = groupBy(INH, 'book');
+  Object.entries(inhBooks).forEach(([book, lectures]) => {
+    const done = lectures.filter(l => cardDone(l.id)).length;
+    const key = book.replace(/\s/g,'');
+    const fill = document.getElementById('mini-panel-inh-' + key);
+    const pct  = document.getElementById('mpct-panel-inh-' + key);
+    if (fill) fill.style.width = (done/lectures.length*100).toFixed(0) + '%';
+    if (pct)  pct.textContent  = `${done}/${lectures.length}`;
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.className = 'tab');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'corp') {
+    document.querySelectorAll('.tab')[0].className = 'tab active-corp';
+    document.getElementById('panel-corp').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab')[1].className = 'tab active-inh';
+    document.getElementById('panel-inh').classList.add('active');
+  }
+}
+
+// Deadline countdown
+function updateDeadline() {
+  const deadline = new Date('2026-11-30');
+  const now = new Date();
+  const diff = Math.ceil((deadline - now) / 86400000);
+  document.getElementById('days-left').textContent = diff > 0 ? diff : 0;
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+renderPanel(CORP, 'panel-corp', 'corp');
+renderPanel(INH,  'panel-inh',  'inh');
+updateAll();
+updateDeadline();
+</script>
+
+</body>
+</html>
